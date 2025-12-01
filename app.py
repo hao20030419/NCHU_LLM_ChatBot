@@ -1,59 +1,46 @@
 import streamlit as st
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import pipeline
 
-st.set_page_config(page_title="Qwen Chatbot", page_icon="🤖")
-st.title("🤖 Qwen2.5 Chatbot (Cloud Safe Mode)")
+st.set_page_config(page_title="Mini LLM Chatbot", page_icon="🤖")
+st.title("🤖 Mini LLM Chatbot（Streamlit Safe Mode）")
 
+# 載入超小模型
 @st.cache_resource
 def load_model():
-    tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct", trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        "Qwen/Qwen2.5-0.5B-Instruct",
-        dtype=torch.float32,
-        trust_remote_code=True
-    )
-    model.eval()
-    return tokenizer, model
+    return pipeline("text-generation", model="distilgpt2")
 
-tokenizer, model = load_model()
+generator = load_model()
 
+# 初始化對話狀態
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# 清除對話
 if st.button("🔄 清除對話"):
     st.session_state.messages = []
     st.rerun()
 
+# 顯示歷史對話
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
+# 使用者輸入
 if prompt := st.chat_input("請輸入你的問題"):
 
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    system_prompt = "你是一位智慧助理，請用繁體中文回答使用者的問題。"
+    # 系統提示
+    system_prompt = "You are a helpful AI assistant."
 
-    dialogue = f"system: {system_prompt}\n"
-    for m in st.session_state.messages[-5:]:
-        dialogue += f"{m['role']}: {m['content']}\n"
-    dialogue += "assistant:"
+    input_text = system_prompt + "\nUser: " + prompt + "\nAssistant:"
 
     with st.chat_message("assistant"):
-        with st.spinner("Qwen 回應中..."):
-            inputs = tokenizer(dialogue, return_tensors="pt", truncation=True)
-            outputs = model.generate(
-                inputs["input_ids"],
-                max_new_tokens=128,
-                temperature=0.7,
-                top_p=0.9,
-                do_sample=True
-            )
-            response = tokenizer.decode(outputs[0], skip_special_tokens=True)
-            reply = response.split("assistant:")[-1].strip()
+        with st.spinner("AI 回應中..."):
+            result = generator(input_text, max_length=120, num_return_sequences=1)
+            reply = result[0]["generated_text"].split("Assistant:")[-1].strip()
             st.markdown(reply)
 
     st.session_state.messages.append({"role": "assistant", "content": reply})
