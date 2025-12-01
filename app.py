@@ -3,7 +3,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 st.set_page_config(page_title="Qwen2.5 Chatbot", page_icon="🤖")
-st.title("🤖 Qwen2.5-1.5B 中文聊天機器人")
+st.title("🤖 Qwen2.5-0.5B 中文聊天機器人")
 
 if st.button("🔄 清除對話"):
     st.session_state.messages = []
@@ -13,8 +13,8 @@ if st.button("🔄 清除對話"):
 def load_model():
     tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-1.5B-Instruct", trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(
-        "Qwen/Qwen2.5-1.5B-Instruct",
-        torch_dtype=torch.float32,
+        "Qwen/Qwen2.5-0.5B-Instruct",
+        dtype=torch.float32,
         device_map="auto",
         trust_remote_code=True
     )
